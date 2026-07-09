@@ -1,4 +1,7 @@
 const crypto = require('crypto');
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
 exports.handler = async function (event) {
   if (event.httpMethod !== 'POST') {
@@ -20,7 +23,13 @@ exports.handler = async function (event) {
 
     const isValid = expectedSignature === razorpay_signature;
 
-    // TODO: isValid true hone par order ka status database me "paid" karo
+    if (isValid) {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'paid', payment_id: razorpay_payment_id })
+        .eq('order_id', razorpay_order_id);
+      if (error) console.error('supabase update error:', error);
+    }
 
     return {
       statusCode: isValid ? 200 : 400,
