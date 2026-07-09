@@ -768,20 +768,47 @@ function goToPayment(){
   ckShow(2);}
 function selPay(el){document.querySelectorAll('.pay-opt').forEach(p=>p.classList.remove('sel'));
   el.classList.add('sel');selectedPay=el.dataset.pay;}
+function getAddressData(){
+  return {
+    name:document.getElementById('adName').value,
+    phone:document.getElementById('adPhone').value,
+    address:document.getElementById('adAddr').value,
+    city:document.getElementById('adCity').value,
+    pin:document.getElementById('adPin').value,
+    state:document.getElementById('adState').value
+  };
+}
 async function placeOrder(){
   const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
+  const address=getAddressData();
   if(selectedPay==='cod'){
-    return completeOrder('TRS'+Date.now().toString().slice(-8),'Cash on Delivery');
+    return codOrder(total,address);
   }
-  payOnline(total);
+  payOnline(total,address);
 }
 
-async function payOnline(total){
+async function codOrder(total,address){
+  try{
+    toast('Order place ho raha hai...');
+    const res=await fetch(`${API_BASE}/cod-order`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({amount:total,cart,address})
+    });
+    const data=await res.json();
+    if(!data.orderId)return toast('Order save nahi ho paaya, dobara try karo');
+    completeOrder(data.orderId,'Cash on Delivery');
+  }catch(err){
+    console.error(err);
+    toast('Kuch gadbad hui, dobara try karo.');
+  }
+}
+
+async function payOnline(total,address){
   try{
     toast('Payment window khul raha hai...');
     const res=await fetch(`${API_BASE}/create-order`,{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({amount:total})
+      body:JSON.stringify({amount:total,cart,address})
     });
     const data=await res.json();
     if(!data.orderId)return toast('Order create nahi ho paaya, dobara try karo');
@@ -795,8 +822,8 @@ async function payOnline(total){
       order_id:data.orderId,
       theme:{color:'#c9a962'},
       prefill:{
-        name:document.getElementById('adName').value,
-        contact:document.getElementById('adPhone').value
+        name:address.name,
+        contact:address.phone
       },
       handler:async function(response){
         const vr=await fetch(`${API_BASE}/verify-payment`,{
