@@ -409,7 +409,7 @@ footer .flogo b{color:var(--champ)}
   <div class="modal">
     <div id="loginMain">
       <h2>Welcome to <em class="gold">Treassories</em></h2>
-      <p class="sub">Kharidne ke liye pehle login karein</p>
+      <p class="sub">Please log in before shopping</p>
       <button class="login-opt" onclick="socialLogin('Google')"><span class="lo-icon">🔴</span> Continue with Google</button>
       <button class="login-opt" onclick="socialLogin('Facebook')"><span class="lo-icon">🔵</span> Continue with Facebook</button>
       <button class="login-opt" onclick="showLoginView('phoneView')"><span class="lo-icon">📱</span> Continue with Phone (OTP)</button>
@@ -418,7 +418,7 @@ footer .flogo b{color:var(--champ)}
     </div>
     <div id="phoneView" class="hidden">
       <button class="back-link" onclick="showLoginView('loginMain')">← BACK</button>
-      <h2>Phone Login</h2><p class="sub">OTP aapke number pe bheja jayega</p>
+      <h2>Phone Login</h2><p class="sub">OTP will be sent to your number</p>
       <div id="phoneStep1">
         <div class="field"><label>MOBILE NUMBER</label><input type="tel" id="phoneInput" maxlength="10" placeholder="10-digit number"></div>
         <button class="btn-lux btn-fill w100" onclick="sendOTP()">Send OTP</button>
@@ -431,8 +431,8 @@ footer .flogo b{color:var(--champ)}
     </div>
     <div id="emailView" class="hidden">
       <button class="back-link" onclick="showLoginView('loginMain')">← BACK</button>
-      <h2>Email Login</h2><p class="sub">Apni details bharein</p>
-      <div class="field"><label>FULL NAME</label><input id="emailName" placeholder="Aapka naam"></div>
+      <h2>Email Login</h2><p class="sub">Please fill in your details</p>
+      <div class="field"><label>FULL NAME</label><input id="emailName" placeholder="Your name"></div>
       <div class="field"><label>EMAIL</label><input type="email" id="emailInput" placeholder="you@example.com"></div>
       <div class="field"><label>PASSWORD</label>
         <div class="pw-wrap">
@@ -455,7 +455,7 @@ footer .flogo b{color:var(--champ)}
     </div>
     <div id="ckStep1">
       <h2 style="font-size:1.2rem;text-align:left;margin-bottom:1.3rem">Delivery Address</h2>
-      <div class="field"><label>FULL NAME</label><input id="adName" placeholder="Receiver ka naam"></div>
+      <div class="field"><label>FULL NAME</label><input id="adName" placeholder="Receiver's name"></div>
       <div class="field"><label>PHONE</label><input id="adPhone" maxlength="10" placeholder="Delivery number"></div>
       <div class="field"><label>FULL ADDRESS</label><textarea id="adAddr" rows="2" placeholder="House no, Street, Area"></textarea></div>
       <div style="display:flex;gap:1rem">
@@ -504,7 +504,7 @@ footer .flogo b{color:var(--champ)}
 
 <script>
 /* ═══════════ BACKEND CONFIG (Vercel Serverless Functions) ═══════════ */
-const API_BASE='/api'; // same Vercel site pe functions host hote hain, koi alag URL nahi chahiye
+const API_BASE='/api'; // functions are hosted on the same Vercel site, no separate URL needed
 
 /* ═══════════ INTRO ═══════════ */
 const brand="TREASSORIES", bm=document.getElementById('brandMask');
@@ -725,14 +725,14 @@ function loginSuccess(name){user={name};closeOverlay('loginOverlay');
   if(pendingCheckout){pendingCheckout=false;startCheckout();}}
 function socialLogin(p){toast(`Connecting to ${p}...`);setTimeout(()=>loginSuccess(p+' User'),1200);}
 function sendOTP(){const ph=document.getElementById('phoneInput').value;
-  if(ph.length!==10)return toast('Sahi 10-digit number daalo');
+  if(ph.length!==10)return toast('Please enter a valid 10-digit number');
   document.getElementById('otpHint').textContent='+91 '+ph;
   document.getElementById('phoneStep1').classList.add('hidden');
   document.getElementById('phoneStep2').classList.remove('hidden');
   const ins=document.querySelectorAll('.otp-in');ins.forEach(i=>i.value='');ins[0].focus();
   ins.forEach((inp,i)=>inp.oninput=()=>{if(inp.value&&i<3)ins[i+1].focus();});}
 function verifyOTP(){const otp=[...document.querySelectorAll('.otp-in')].map(i=>i.value).join('');
-  otp==='1234'?loginSuccess('Phone User'):toast('Galat OTP — demo OTP hai: 1234');}
+  otp==='1234'?loginSuccess('Phone User'):toast('Incorrect OTP — demo OTP is: 1234');}
 function togglePw(id,btn){
   const inp=document.getElementById(id);
   const show=inp.type==='password';
@@ -740,10 +740,10 @@ function togglePw(id,btn){
   btn.textContent=show?'🙈':'👁';
 }
 function emailLogin(){const n=document.getElementById('emailName').value,e=document.getElementById('emailInput').value,p=document.getElementById('passInput').value;
-  if(!n||!e.includes('@')||p.length<4)return toast('Sabhi details sahi se bharo');loginSuccess(n);}
+  if(!n||!e.includes('@')||p.length<4)return toast('Please fill in all details correctly');loginSuccess(n);}
 
 function startCheckout(){
-  if(!cart.length)return toast('Pehle bag me kuch add karo ✦');
+  if(!cart.length)return toast('Add something to your bag first ✦');
   if(!user){pendingCheckout=true;toggleCart();return openLogin();}
   document.getElementById('cartDrawer').classList.remove('open');
   ckShow(1);document.getElementById('checkoutOverlay').classList.add('show');}
@@ -751,15 +751,15 @@ function ckShow(step){[1,2,3].forEach(n=>{
   document.getElementById('ckStep'+n).classList.toggle('hidden',n!==step);
   const st=document.getElementById('st'+n);
   st.classList.toggle('active',n===step);st.classList.toggle('done',n<step);});}
-function useLocation(){toast('Location fetch ho rahi hai...');
+function useLocation(){toast('Fetching your location...');
   if(navigator.geolocation)navigator.geolocation.getCurrentPosition(
-    pos=>{document.getElementById('adAddr').value=`Lat: ${pos.coords.latitude.toFixed(4)}, Lng: ${pos.coords.longitude.toFixed(4)} (edit karke pura address likho)`;
-    toast('Location mil gayi — address complete karo');},
-    ()=>toast('Location permission do ya manually bharo'));}
+    pos=>{document.getElementById('adAddr').value=`Lat: ${pos.coords.latitude.toFixed(4)}, Lng: ${pos.coords.longitude.toFixed(4)} (edit to enter your full address)`;
+    toast('Location found — please complete your address');},
+    ()=>toast('Please allow location access or enter address manually'));}
 function goToPayment(){
   for(const id of['adName','adPhone','adAddr','adCity','adPin','adState'])
-    if(!document.getElementById(id).value)return toast('Delivery ki saari details bharo');
-  if(document.getElementById('adPhone').value.length!==10)return toast('Phone 10 digit ka hona chahiye');
+    if(!document.getElementById(id).value)return toast('Please fill in all delivery details');
+  if(document.getElementById('adPhone').value.length!==10)return toast('Phone number must be 10 digits');
   const sub=cart.reduce((s,i)=>s+i.price*i.qty,0);
   document.getElementById('orderSummary').innerHTML=
     cart.map(i=>`<div class="row"><span>${i.name} × ${i.qty}</span><span>₹${i.price*i.qty}</span></div>`).join('')+
@@ -789,29 +789,29 @@ async function placeOrder(){
 
 async function codOrder(total,address){
   try{
-    toast('Order place ho raha hai...');
+    toast('Placing your order...');
     const res=await fetch(`${API_BASE}/cod-order`,{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({amount:total,cart,address})
     });
     const data=await res.json();
-    if(!data.orderId)return toast('Order save nahi ho paaya, dobara try karo');
+    if(!data.orderId)return toast('Order could not be saved, please try again');
     completeOrder(data.orderId,'Cash on Delivery');
   }catch(err){
     console.error(err);
-    toast('Kuch gadbad hui, dobara try karo.');
+    toast('Something went wrong, please try again.');
   }
 }
 
 async function payOnline(total,address){
   try{
-    toast('Payment window khul raha hai...');
+    toast('Opening payment window...');
     const res=await fetch(`${API_BASE}/create-order`,{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({amount:total,cart,address})
     });
     const data=await res.json();
-    if(!data.orderId)return toast('Order create nahi ho paaya, dobara try karo');
+    if(!data.orderId)return toast('Order could not be created, please try again');
 
     const rzp=new Razorpay({
       key:data.keyId,
@@ -833,14 +833,14 @@ async function payOnline(total,address){
         const vd=await vr.json();
         const pn={upi:'UPI',card:'Card',wallet:'Wallet'};
         if(vd.verified)completeOrder(response.razorpay_payment_id,pn[selectedPay]||'Online');
-        else toast('Payment verify nahi hua — support se contact karo');
+        else toast('Payment could not be verified — please contact support');
       },
-      modal:{ondismiss:function(){toast('Payment cancel kar diya gaya');}}
+      modal:{ondismiss:function(){toast('Payment was cancelled');}}
     });
     rzp.open();
   }catch(err){
     console.error(err);
-    toast('Kuch gadbad hui, dobara try karo.');
+    toast('Something went wrong, please try again.');
   }
 }
 
@@ -854,7 +854,7 @@ function completeOrder(oid,payLabel){
      <div class="row total"><span>Total</span><span>₹${total.toLocaleString('en-IN')}</span></div>`;
   ckShow(3);confetti();
 }
-function finishOrder(){cart=[];updateCart();closeOverlay('checkoutOverlay');toast('Shukriya! Order confirm ho gaya ✦');}
+function finishOrder(){cart=[];updateCart();closeOverlay('checkoutOverlay');toast('Thank you! Your order is confirmed ✦');}
 function confetti(){for(let i=0;i<36;i++){
   const c=document.createElement('div');
   c.style.cssText=`position:fixed;z-index:999;width:8px;height:8px;pointer-events:none;
