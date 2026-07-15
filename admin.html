@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — TREASSORIES</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,800;1,500&family=Outfit:wght@200;300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="light-bg">
+
+<section class="page-hero">
+  <span class="eyebrow">Store Management</span>
+  <h1>Product <em>Admin</em></h1>
+  <div class="breadcrumb"><a href="index.html">Home</a> / Admin</div>
+</section>
+
+<div class="admin-wrap">
+  <div class="admin-card">
+    <h2 style="font-size:1.2rem;text-align:left;margin-bottom:1.3rem" id="formTitle">Add a New Product</h2>
+    <div class="field"><label>ADMIN PASSWORD</label><input type="password" id="adminPass" placeholder="Enter admin password"></div>
+    <input type="hidden" id="editId">
+    <div class="field"><label>PRODUCT NAME</label><input id="pName" placeholder="e.g. Obsidian Cufflinks"></div>
+    <div style="display:flex;gap:1rem">
+      <div class="field" style="flex:1"><label>CATEGORY</label>
+        <select id="pCategory"><option value="men">Men</option><option value="women">Women</option></select>
+      </div>
+      <div class="field" style="flex:1"><label>TAG (optional)</label><input id="pTag" placeholder="e.g. New, Trending"></div>
+    </div>
+    <div style="display:flex;gap:1rem">
+      <div class="field" style="flex:1"><label>PRICE (₹)</label><input type="number" id="pPrice" placeholder="1299"></div>
+      <div class="field" style="flex:1"><label>ORIGINAL PRICE (optional)</label><input type="number" id="pOldPrice" placeholder="2199"></div>
+    </div>
+    <div class="field"><label>IMAGE URL (optional — leave empty to use an emoji instead)</label><input id="pImage" placeholder="https://..."></div>
+    <div class="field"><label>EMOJI (used if no image, e.g. ⌚ 👜 💍)</label><input id="pEmoji" placeholder="✦"></div>
+    <div class="field"><label>DESCRIPTION</label><textarea id="pDesc" rows="4" placeholder="Describe this piece..."></textarea></div>
+    <button class="btn-lux btn-fill w100" onclick="saveProduct()" id="saveBtn">Add Product</button>
+    <button class="back-link" style="display:none;margin-top:1rem" id="cancelEditBtn" onclick="resetForm()">Cancel edit</button>
+  </div>
+</div>
+
+<div class="admin-list">
+  <h2 style="font-size:1.2rem;margin-bottom:1.5rem">Current Products</h2>
+  <div id="adminProductList"><div class="no-reviews">Loading products…</div></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API_BASE = '/api';
+let toastT;
+function toast(msg){const t=document.getElementById('toast');t.innerHTML=msg;t.classList.add('show');
+clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2800);}
+
+async function loadAdminProducts(){
+  try{
+    const res = await fetch(`${API_BASE}/products?limit=100`);
+    const data = await res.json();
+    const list = data.products || [];
+    const box = document.getElementById('adminProductList');
+    box.innerHTML = list.length ? list.map(p=>`
+      <div class="admin-row">
+        ${p.image_url?`<img src="${p.image_url}">`:`<span class="ar-emoji">${p.emoji||'✦'}</span>`}
+        <span class="ar-name">${p.name} <span style="color:var(--muted);font-size:.75rem">(${p.category})</span></span>
+        <span class="ar-price">₹${Number(p.price).toLocaleString('en-IN')}</span>
+        <button onclick='editProduct(${JSON.stringify(p).replace(/'/g,"&apos;")})'>Edit</button>
+      </div>`).join('') : '<div class="no-reviews">No products yet. Add your first one above.</div>';
+  }catch(err){
+    console.error(err);
+    document.getElementById('adminProductList').innerHTML = '<div class="no-reviews">Could not load products.</div>';
+  }
+}
+
+function editProduct(p){
+  document.getElementById('formTitle').textContent = 'Editing: ' + p.name;
+  document.getElementById('editId').value = p.id;
+  document.getElementById('pName').value = p.name;
+  document.getElementById('pCategory').value = p.category;
+  document.getElementById('pTag').value = p.tag || '';
+  document.getElementById('pPrice').value = p.price;
+  document.getElementById('pOldPrice').value = p.old_price || '';
+  document.getElementById('pImage').value = p.image_url || '';
+  document.getElementById('pEmoji').value = p.emoji || '';
+  document.getElementById('pDesc').value = p.description || '';
+  document.getElementById('saveBtn').textContent = 'Save Changes';
+  document.getElementById('cancelEditBtn').style.display = 'block';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function resetForm(){
+  document.getElementById('formTitle').textContent = 'Add a New Product';
+  document.getElementById('editId').value = '';
+  ['pName','pTag','pPrice','pOldPrice','pImage','pEmoji','pDesc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('pCategory').value = 'men';
+  document.getElementById('saveBtn').textContent = 'Add Product';
+  document.getElementById('cancelEditBtn').style.display = 'none';
+}
+
+async function saveProduct(){
+  const password = document.getElementById('adminPass').value;
+  const name = document.getElementById('pName').value.trim();
+  const price = document.getElementById('pPrice').value;
+  if(!password) return toast('Please enter the admin password');
+  if(!name || !price) return toast('Name and price are required');
+
+  const payload = {
+    password,
+    id: document.getElementById('editId').value || undefined,
+    name,
+    category: document.getElementById('pCategory').value,
+    price,
+    old_price: document.getElementById('pOldPrice').value || undefined,
+    image_url: document.getElementById('pImage').value || undefined,
+    emoji: document.getElementById('pEmoji').value || undefined,
+    tag: document.getElementById('pTag').value || undefined,
+    description: document.getElementById('pDesc').value || undefined,
+  };
+
+  try{
+    const res = await fetch(`${API_BASE}/admin-products`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if(!res.ok) return toast(data.error || 'Could not save product');
+    toast('Product saved ✦');
+    resetForm();
+    loadAdminProducts();
+  }catch(err){
+    console.error(err);
+    toast('Something went wrong, please try again.');
+  }
+}
+
+loadAdminProducts();
+</script>
+</body>
+</html>

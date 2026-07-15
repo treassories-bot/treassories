@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Men — TREASSORIES</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,800;1,500&family=Outfit:wght@200;300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body class="light-bg">
+
+<section class="page-hero">
+  <span class="eyebrow">For Him — Curated Accessories</span>
+  <h1>Men's <em>Edit</em></h1>
+  <div class="breadcrumb"><a href="index.html">Home</a> / Men</div>
+</section>
+
+<section id="shop">
+  <div class="grid" id="productGrid"></div>
+</section>
+
+<script src="shared.js"></script>
+<script>
+function onSharedReady(){
+  loadProductsIntoGrid('productGrid', 'men');
+}
+</script>
+</body>
+</html>

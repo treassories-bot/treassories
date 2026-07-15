@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TREASSORIES</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,800;1,500&family=Outfit:wght@200;300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body class="light-bg">
+
+<div id="pdRoot" style="padding-top:6rem;text-align:center;color:var(--muted);min-height:50vh">Loading…</div>
+
+<script src="shared.js"></script>
+<script>
+let pdProduct = null;
+let pdQty = 1;
+
+function getSlug(){
+  return new URLSearchParams(location.search).get('slug');
+}
+
+async function onSharedReady(){
+  const slug = getSlug();
+  if(!slug){ showNotFound(); return; }
+  try{
+    const res = await fetch(`${API_BASE}/product?slug=${encodeURIComponent(slug)}`);
+    if(!res.ok){ showNotFound(); return; }
+    const data = await res.json();
+    pdProduct = data.product;
+    cacheProducts([pdProduct]);
+    renderProduct();
+    loadReviews();
+  }catch(err){
+    console.error(err);
+    showNotFound();
+  }
+}
+
+function showNotFound(){
+  document.getElementById('pdRoot').innerHTML =
+    '<div style="padding:8rem 1rem;text-align:center"><h2>Piece not found</h2>' +
+    '<p style="color:var(--muted);margin:1rem 0 2rem">This product may have been removed or the link is incorrect.</p>' +
+    '<a href="index.html" class="btn-lux" style="text-decoration:none">Back to Home</a></div>';
+}
+
+function renderProduct(){
+  const p = pdProduct;
+  document.title = p.name + ' — TREASSORIES';
+  const visual = p.image_url
+    ? `<img src="${p.image_url}" alt="${p.name}">`
+    : `<span class="pd-emoji">${p.emoji||'✦'}</span>`;
+  document.getElementById('pdRoot').innerHTML = `
+    <div class="breadcrumb" style="padding:7rem 5% 0;text-align:left;max-width:1100px;margin:0 auto">
+      <a href="index.html">Home</a> / <a href="${p.category}.html">${p.category==='men'?'Men':'Women'}</a> / ${p.name}
+    </div>
+    <div class="pd-wrap">
+      <div class="pd-visual">${p.tag?`<span class="pd-tag">${p.tag}</span>`:''}${visual}</div>
+      <div class="pd-info">
+        <span class="pcat">${p.category==='men'?'Homme':'Femme'} · Accessory</span>
+        <h1>${p.name}</h1>
+        <div class="pd-stars">★★★★★<b>${p.rating||4.5} · <span id="reviewCountLabel">0 reviews</span></b></div>
+        <div class="pd-price">₹${Number(p.price).toLocaleString('en-IN')}${p.old_price?`<s>₹${p.old_price}</s>`:''}</div>
+        <p class="pd-desc">${p.description || 'A timeless piece from the Treassories collection, crafted for those who appreciate quiet luxury.'}</p>
+        <div class="pd-qty">
+          <button onclick="pdChangeQty(-1)">−</button><b id="pdQtyLabel">1</b><button onclick="pdChangeQty(1)">+</button>
+        </div>
+        <button class="btn-lux btn-fill w100" onclick="pdAddToCart()">Add to Bag</button>
+      </div>
+    </div>
+    <section class="reviews-section">
+      <div class="reviews-head"><h2>Customer <em class="gold">Reviews</em></h2></div>
+      <div id="reviewForm" class="admin-card" style="margin-bottom:2.5rem">
+        <div class="field"><label>YOUR NAME</label><input id="rvName" placeholder="Your name"></div>
+        <div class="field"><label>RATING</label>
+          <div class="star-pick" id="starPick">
+            <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+          </div>
+        </div>
+        <div class="field"><label>YOUR REVIEW</label><textarea id="rvComment" rows="3" placeholder="What did you think of this piece?"></textarea></div>
+        <button class="btn-lux btn-fill w100" onclick="submitReview()">Submit Review</button>
+      </div>
+      <div id="reviewsList"><div class="no-reviews">Loading reviews…</div></div>
+    </section>
+  `;
+  initStarPicker();
+}
+
+function pdChangeQty(d){
+  pdQty = Math.max(1, pdQty + d);
+  document.getElementById('pdQtyLabel').textContent = pdQty;
+}
+function pdAddToCart(){
+  for(let i=0;i<pdQty;i++) addToCart(pdProduct.id);
+}
+
+let selectedRating = 0;
+function initStarPicker(){
+  const stars = document.querySelectorAll('#starPick span');
+  stars.forEach(s=>{
+    s.addEventListener('click', ()=>{
+      selectedRating = Number(s.dataset.v);
+      stars.forEach(x=>x.classList.toggle('on', Number(x.dataset.v) <= selectedRating));
+    });
+  });
+}
+
+async function loadReviews(){
+  try{
+    const res = await fetch(`${API_BASE}/reviews?product_id=${pdProduct.id}`);
+    const data = await res.json();
+    const list = data.reviews || [];
+    const label = document.getElementById('reviewCountLabel');
+    if(label) label.textContent = list.length + (list.length===1?' review':' reviews');
+    const box = document.getElementById('reviewsList');
+    box.innerHTML = list.length ? list.map(r=>`
+      <div class="review-card">
+        <div class="rv-top"><span class="rv-name">${r.name}</span><span class="rv-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span></div>
+        <div class="rv-comment">${r.comment || ''}</div>
+        <div class="rv-date">${new Date(r.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>
+      </div>`).join('') : '<div class="no-reviews">No reviews yet — be the first to share your thoughts.</div>';
+  }catch(err){
+    console.error(err);
+  }
+}
+
+async function submitReview(){
+  const name = document.getElementById('rvName').value.trim();
+  const comment = document.getElementById('rvComment').value.trim();
+  if(!name) return toast('Please enter your name');
+  if(!selectedRating) return toast('Please select a rating');
+  try{
+    const res = await fetch(`${API_BASE}/reviews`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({product_id:pdProduct.id, name, rating:selectedRating, comment})
+    });
+    if(!res.ok) return toast('Could not submit review, please try again');
+    toast('Thank you for your review ✦');
+    document.getElementById('rvName').value='';
+    document.getElementById('rvComment').value='';
+    selectedRating=0;
+    document.querySelectorAll('#starPick span').forEach(x=>x.classList.remove('on'));
+    loadReviews();
+  }catch(err){
+    console.error(err);
+    toast('Something went wrong, please try again.');
+  }
+}
+</script>
+</body>
+</html>
