@@ -26,26 +26,65 @@ function navHTML(){
   const active = n => page===n ? ' class="nav-active"' : '';
   return `
 <nav>
-  <a href="index.html" class="logo" style="text-decoration:none">TREASS<b>ORIES</b></a>
+  <div class="nav-left">
+    <button class="menu-btn" id="menuBtn" onclick="openSidebar()" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+    <a href="index.html" class="logo" style="text-decoration:none">TREASS<b>ORIES</b></a>
+  </div>
+
   <ul class="nav-links">
     <li><a href="index.html#collections">Collections</a></li>
     <li><a href="men.html"${active('men')}>Men</a></li>
     <li><a href="women.html"${active('women')}>Women</a></li>
   </ul>
+
   <div class="search-wrap">
     <input type="text" class="search-bar" id="searchInput" placeholder="Search products...">
     <div class="search-results" id="searchResults"></div>
   </div>
+
   <div class="nav-icons">
     <button class="icon-btn" id="userBtn" onclick="openLogin()">◈</button>
     <button class="icon-btn" onclick="toggleCart()">◇<span class="cart-count" id="cartCount">0</span></button>
   </div>
 </nav>`;
 }
-
 function chromeHTML(){
+  return `function chromeHTML(){
   return `
-<!-- ═══ CART ═══ -->
+<!-- ═══ SIDEBAR MENU ═══ -->
+<div class="side-backdrop" id="sideBackdrop" onclick="closeSidebar()"></div>
+
+<aside class="side-menu" id="sideMenu" aria-hidden="true">
+  <div class="side-head">
+    <a href="index.html" class="side-logo" onclick="closeSidebar()">TREASS<b>ORIES</b></a>
+    <button class="side-close" onclick="closeSidebar()" aria-label="Close menu">✕</button>
+  </div>
+
+  <div class="side-search">
+    <input type="text" id="sideSearchInput" placeholder="Search products...">
+    <div class="side-results" id="sideSearchResults"></div>
+  </div>
+
+  <div class="side-links">
+    <a href="index.html" onclick="closeSidebar()"><span>01</span> Home</a>
+    <a href="index.html#collections" onclick="closeSidebar()"><span>02</span> Collections</a>
+    <a href="men.html" onclick="closeSidebar()"><span>03</span> Men</a>
+    <a href="women.html" onclick="closeSidebar()"><span>04</span> Women</a>
+  </div>
+
+  <div class="side-actions">
+    <button onclick="closeSidebar();openLogin()">Account</button>
+    <button onclick="closeSidebar();toggleCart()">Open Bag</button>
+  </div>
+
+  <div class="side-note">
+    <b>Premium Accessories</b>
+    <p>Timeless pieces for men and women, crafted for everyday luxury.</p>
+  </div>
+</aside>
+  <!-- ═══ CART ═══ -->
 <div class="drawer" id="cartDrawer">
   <div class="drawer-head"><h2>YOUR BAG</h2><button class="close-x" onclick="toggleCart()">✕</button></div>
   <div class="drawer-items" id="cartItems"></div>
@@ -265,7 +304,71 @@ function updateCart(){
 }
 function chQty(id,d){const i=cart.find(x=>x.id===id);i.qty+=d;if(i.qty<1)cart=cart.filter(x=>x.id!==id);updateCart();}
 function toggleCart(){document.getElementById('cartDrawer').classList.toggle('open');}
+/* ═══════════ SIDEBAR MENU ═══════════ */
+function openSidebar(){
+  const menu = document.getElementById('sideMenu');
+  const backdrop = document.getElementById('sideBackdrop');
+  if(!menu || !backdrop) return;
 
+  menu.classList.add('open');
+  backdrop.classList.add('show');
+  document.body.classList.add('menu-lock');
+  menu.setAttribute('aria-hidden','false');
+}
+
+function closeSidebar(){
+  const menu = document.getElementById('sideMenu');
+  const backdrop = document.getElementById('sideBackdrop');
+  if(!menu || !backdrop) return;
+
+  menu.classList.remove('open');
+  backdrop.classList.remove('show');
+  document.body.classList.remove('menu-lock');
+  menu.setAttribute('aria-hidden','true');
+}
+
+function initSidebarSearch(){
+  const input = document.getElementById('sideSearchInput');
+  const results = document.getElementById('sideSearchResults');
+  if(!input || !results) return;
+
+  let timer;
+  input.addEventListener('input', ()=>{
+    clearTimeout(timer);
+    const q = input.value.trim();
+
+    if(q.length < 2){
+      results.classList.remove('show');
+      results.innerHTML = '';
+      return;
+    }
+
+    timer = setTimeout(async ()=>{
+      try{
+        const res = await fetch(`${API_BASE}/products?search=${encodeURIComponent(q)}&limit=6`);
+        const data = await res.json();
+        const list = data.products || [];
+        cacheProducts(list);
+
+        results.innerHTML = list.length ? list.map(p=>`
+          <a class="side-result-item" href="product.html?slug=${p.slug}" onclick="closeSidebar()">
+            ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}">` : `<span>${p.emoji || '✦'}</span>`}
+            <em>${p.name}</em>
+            <b>₹${Number(p.price).toLocaleString('en-IN')}</b>
+          </a>
+        `).join('') : `<div class="side-empty">No products found</div>`;
+
+        results.classList.add('show');
+      }catch(err){
+        console.error(err);
+      }
+    }, 300);
+  });
+
+  document.addEventListener('keydown', e=>{
+    if(e.key === 'Escape') closeSidebar();
+  });
+}
 /* ═══════════ LOGIN ═══════════ */
 function openLogin(){showLoginView('loginMain');document.getElementById('loginOverlay').classList.add('show');}
 function closeOverlay(id){document.getElementById(id).classList.remove('show');}
@@ -427,6 +530,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   updateCart();
   if(user) document.getElementById('userBtn').textContent='✦';
   initSearch();
+  initSidebarSearch();
   initRevealObserver();
   if(typeof onSharedReady==='function') onSharedReady();
 });
