@@ -393,6 +393,7 @@ display:flex;flex-direction:column;padding:1.6rem;overflow-y:auto}
 .side-drawer-head .logo{font-size:1rem;letter-spacing:.25em}
 .side-search{position:relative;margin-bottom:1.8rem}
 .side-links{
+  position: static;
   display:flex;
   flex-direction:column;
   gap:12px;
