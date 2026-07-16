@@ -26,6 +26,7 @@ function navHTML(){
   const active = n => page===n ? ' class="nav-active"' : '';
   return `
 <nav>
+  <button class="icon-btn hamburger-btn" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
   <a href="index.html" class="logo" style="text-decoration:none">TREASS<b>ORIES</b></a>
   <ul class="nav-links">
     <li><a href="index.html#collections">Collections</a></li>
@@ -33,21 +34,43 @@ function navHTML(){
     <li><a href="women.html"${active('women')}>Women</a></li>
   </ul>
   <div class="search-wrap">
-    <input type="text" class="search-bar" id="searchInput" placeholder="Search products...">
+    <input type="text" class="search-bar" id="searchInput" placeholder="Search products..." aria-label="Search products">
     <div class="search-results" id="searchResults"></div>
   </div>
   <div class="nav-icons">
-    <button class="icon-btn" id="userBtn" onclick="openLogin()">◈</button>
-    <button class="icon-btn" onclick="toggleCart()">◇<span class="cart-count" id="cartCount">0</span></button>
+    <button class="icon-btn" id="userBtn" onclick="openLogin()" aria-label="Account">◈</button>
+    <button class="icon-btn" onclick="toggleCart()" aria-label="Shopping bag">◇<span class="cart-count" id="cartCount">0</span></button>
   </div>
-</nav>`;
+</nav>
+<div class="side-overlay" id="sideOverlay" onclick="toggleSidebar()"></div>
+<div class="side-drawer" id="sideDrawer">
+  <div class="side-drawer-head">
+    <span class="logo">TREASS<b>ORIES</b></span>
+    <button class="close-x" onclick="toggleSidebar()" aria-label="Close menu">✕</button>
+  </div>
+  <div class="side-search">
+    <input type="text" class="search-bar" id="sideSearchInput" placeholder="Search products..." aria-label="Search products">
+    <div class="search-results" id="sideSearchResults"></div>
+  </div>
+  <nav class="side-links">
+    <a href="index.html"${active('index')}>Home</a>
+    <a href="men.html"${active('men')}>Men</a>
+    <a href="women.html"${active('women')}>Women</a>
+    <a href="index.html#collections">Collections</a>
+    <a href="contact.html"${active('contact')}>Contact Us</a>
+  </nav>
+  <div class="side-foot">
+    <button class="login-opt" onclick="toggleSidebar();openLogin()">◈ Account</button>
+    <button class="login-opt" onclick="toggleSidebar();toggleCart()">◇ Bag (<span id="sideCartCount">0</span>)</button>
+  </div>
+</div>`;
 }
 
 function chromeHTML(){
   return `
 <!-- ═══ CART ═══ -->
 <div class="drawer" id="cartDrawer">
-  <div class="drawer-head"><h2>YOUR BAG</h2><button class="close-x" onclick="toggleCart()">✕</button></div>
+  <div class="drawer-head"><h2>YOUR BAG</h2><button class="close-x" onclick="toggleCart()" aria-label="Close bag">✕</button></div>
   <div class="drawer-items" id="cartItems"></div>
   <div class="drawer-foot">
     <div class="total-row"><span>Total</span><span id="cartTotal">₹0</span></div>
@@ -150,6 +173,15 @@ function chromeHTML(){
 
 <footer>
   <span class="flogo">TREASS<b>ORIES</b></span>
+  <div class="footer-links">
+    <a href="index.html#collections">Collections</a>
+    <a href="men.html">Men</a>
+    <a href="women.html">Women</a>
+    <a href="contact.html">Contact Us</a>
+    <a href="shipping-refund.html">Shipping &amp; Refunds</a>
+    <a href="terms.html">Terms &amp; Conditions</a>
+    <a href="privacy-policy.html">Privacy Policy</a>
+  </div>
   Premium Men & Women Accessories · Crafted with passion in India<br><br>
   © 2025 Treassories · All rights reserved
 </footer>`;
@@ -158,13 +190,27 @@ function chromeHTML(){
 function injectChrome(){
   document.body.insertAdjacentHTML('afterbegin', navHTML());
   document.body.insertAdjacentHTML('beforeend', chromeHTML());
+  document.addEventListener('keydown', e=>{
+    if(e.key !== 'Escape') return;
+    document.getElementById('sideDrawer').classList.remove('open');
+    document.getElementById('sideOverlay').classList.remove('show');
+    document.getElementById('cartDrawer').classList.remove('open');
+    closeOverlay('loginOverlay');
+    closeOverlay('checkoutOverlay');
+  });
+}
+function toggleSidebar(){
+  const opening = !document.getElementById('sideDrawer').classList.contains('open');
+  document.getElementById('sideDrawer').classList.toggle('open', opening);
+  document.getElementById('sideOverlay').classList.toggle('show', opening);
+  if(opening) document.getElementById('cartDrawer').classList.remove('open');
 }
 
 /* ═══════════ PRODUCT CARD (reused by home/men/women grids) ═══════════ */
 function productCardHTML(p, i){
   window.__productCache[p.id]=p;
   const visual = p.image_url
-    ? `<img src="${p.image_url}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover">`
+    ? `<img src="${p.image_url}" alt="${p.name}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'obj',textContent:${JSON.stringify(p.emoji||'✦')}}))" style="width:100%;height:100%;object-fit:cover">`
     : `<span class="obj">${p.emoji||'✦'}</span>`;
   return `<div class="pcard">
     <a href="product.html?slug=${p.slug}" style="text-decoration:none;color:inherit">
@@ -173,8 +219,8 @@ function productCardHTML(p, i){
         ${visual}<div class="glow-floor"></div></div>
       <div class="pbody"><span class="pcat">${p.category==='men'?'Homme':'Femme'} · Accessory</span>
       <h3>${p.name}</h3><div class="stars">★★★★★<b>${p.rating||4.5}</b></div></a>
-      <div class="price-row"><span class="price">₹${Number(p.price).toLocaleString('en-IN')}${p.old_price?`<s>₹${p.old_price}</s>`:''}</span>
-      <button class="bag-btn" onclick="addToCart(${p.id},this)">Add to Bag</button></div></div>
+      <div class="price-row"><span class="price">₹${Number(p.price).toLocaleString('en-IN')}${p.old_price?`<s>₹${Number(p.old_price).toLocaleString('en-IN')}</s>`:''}</span>
+      <button class="bag-btn" onclick="addToCart(${p.id},this)" aria-label="Add ${p.name} to bag">Add to Bag</button></div></div>
     </div>`;
 }
 
@@ -201,8 +247,12 @@ async function loadProductsIntoGrid(gridId, category, limit){
 /* ═══════════ SEARCH ═══════════ */
 let searchTimer;
 function initSearch(){
-  const input = document.getElementById('searchInput');
-  const results = document.getElementById('searchResults');
+  wireSearchInput('searchInput','searchResults');
+  wireSearchInput('sideSearchInput','sideSearchResults');
+}
+function wireSearchInput(inputId, resultsId){
+  const input = document.getElementById(inputId);
+  const results = document.getElementById(resultsId);
   if(!input) return;
   input.addEventListener('input', ()=>{
     clearTimeout(searchTimer);
@@ -212,20 +262,20 @@ function initSearch(){
       try{
         const res = await fetch(`${API_BASE}/products?search=${encodeURIComponent(q)}&limit=6`);
         const data = await res.json();
-        renderSearchResults(data.products||[]);
+        renderSearchResults(data.products||[], resultsId);
       }catch(err){ console.error(err); }
     }, 300);
   });
   document.addEventListener('click', e=>{
-    if(!e.target.closest('.search-wrap')) results.classList.remove('show');
+    if(!e.target.closest(`#${inputId}`) && !e.target.closest(`#${resultsId}`)) results.classList.remove('show');
   });
 }
-function renderSearchResults(list){
-  const results = document.getElementById('searchResults');
+function renderSearchResults(list, resultsId){
+  const results = document.getElementById(resultsId);
   cacheProducts(list);
   results.innerHTML = list.length ? list.map(p=>`
     <a class="sr-item" href="product.html?slug=${p.slug}">
-      ${p.image_url?`<img src="${p.image_url}">`:`<span class="sr-emoji">${p.emoji||'✦'}</span>`}
+      ${p.image_url?`<img src="${p.image_url}" loading="lazy">`:`<span class="sr-emoji">${p.emoji||'✦'}</span>`}
       <span class="sr-name">${p.name}</span>
       <span class="sr-price">₹${Number(p.price).toLocaleString('en-IN')}</span>
     </a>`).join('') : '<div class="sr-empty">No products found</div>';
@@ -234,10 +284,11 @@ function renderSearchResults(list){
 
 /* ═══════════ CART ═══════════ */
 function addToCart(id, btn){
+  id = Number(id);
   const p = window.__productCache[id];
   if(!p) return;
   const ex = cart.find(x=>x.id===id);
-  ex ? ex.qty++ : cart.push({id:p.id,name:p.name,price:p.price,emoji:p.emoji,image_url:p.image_url,qty:1});
+  ex ? ex.qty++ : cart.push({id:Number(p.id),name:p.name,price:Number(p.price),emoji:p.emoji,image_url:p.image_url,qty:1});
   saveCart();
   if(btn){
     const r=btn.getBoundingClientRect();
@@ -254,17 +305,26 @@ function addToCart(id, btn){
 function updateCart(){
   const cc=document.getElementById('cartCount'),n=cart.reduce((s,i)=>s+i.qty,0);
   cc.textContent=n;cc.classList.toggle('show',n>0);
+  const scc=document.getElementById('sideCartCount');
+  if(scc) scc.textContent=n;
   const box=document.getElementById('cartItems');
   box.innerHTML=cart.length?cart.map(i=>`<div class="cart-item">
-    ${i.image_url?`<img src="${i.image_url}" style="width:2.2rem;height:2.2rem;object-fit:cover">`:`<span class="ci-emoji">${i.emoji||'✦'}</span>`}
+    ${i.image_url?`<img src="${i.image_url}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ci-emoji',textContent:${JSON.stringify(i.emoji||'✦')}}))" style="width:2.2rem;height:2.2rem;object-fit:cover">`:`<span class="ci-emoji">${i.emoji||'✦'}</span>`}
     <div class="ci-info"><h4>${i.name}</h4><div class="p">₹${(i.price*i.qty).toLocaleString('en-IN')}</div></div>
-    <div class="qty"><button onclick="chQty(${i.id},-1)">−</button><b>${i.qty}</b><button onclick="chQty(${i.id},1)">+</button></div></div>`).join('')
+    <div class="qty"><button onclick="chQty(${i.id},-1)" aria-label="Decrease quantity">−</button><b>${i.qty}</b><button onclick="chQty(${i.id},1)" aria-label="Increase quantity">+</button></div></div>`).join('')
     :'<div class="empty-cart"><div>◇</div>Your bag is empty.<br>Discover something timeless.</div>';
   document.getElementById('cartTotal').textContent='₹'+cart.reduce((s,i)=>s+i.price*i.qty,0).toLocaleString('en-IN');
   saveCart();
 }
-function chQty(id,d){const i=cart.find(x=>x.id===id);i.qty+=d;if(i.qty<1)cart=cart.filter(x=>x.id!==id);updateCart();}
-function toggleCart(){document.getElementById('cartDrawer').classList.toggle('open');}
+function chQty(id,d){id=Number(id);const i=cart.find(x=>x.id===id);if(!i)return;i.qty+=d;if(i.qty<1)cart=cart.filter(x=>x.id!==id);updateCart();}
+function toggleCart(){
+  const opening = !document.getElementById('cartDrawer').classList.contains('open');
+  document.getElementById('cartDrawer').classList.toggle('open', opening);
+  if(opening){
+    document.getElementById('sideDrawer').classList.remove('open');
+    document.getElementById('sideOverlay').classList.remove('show');
+  }
+}
 
 /* ═══════════ LOGIN ═══════════ */
 function openLogin(){showLoginView('loginMain');document.getElementById('loginOverlay').classList.add('show');}

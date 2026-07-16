@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="description" content="Discover luxury accessories at Treassories.">
+<meta property="og:title" content="TREASSORIES">
+<meta property="og:description" content="Discover luxury accessories at Treassories.">
+<meta property="og:type" content="website">
 <title>TREASSORIES</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,800;1,500&family=Outfit:wght@200;300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
@@ -49,7 +54,7 @@ function renderProduct(){
   const p = pdProduct;
   document.title = p.name + ' — TREASSORIES';
   const visual = p.image_url
-    ? `<img src="${p.image_url}" alt="${p.name}">`
+    ? `<img src="${p.image_url}" alt="${p.name}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'pd-emoji',textContent:${JSON.stringify(p.emoji||'✦')}}))">`
     : `<span class="pd-emoji">${p.emoji||'✦'}</span>`;
   document.getElementById('pdRoot').innerHTML = `
     <div class="breadcrumb" style="padding:7rem 5% 0;text-align:left;max-width:1100px;margin:0 auto">
@@ -61,12 +66,12 @@ function renderProduct(){
         <span class="pcat">${p.category==='men'?'Homme':'Femme'} · Accessory</span>
         <h1>${p.name}</h1>
         <div class="pd-stars">★★★★★<b>${p.rating||4.5} · <span id="reviewCountLabel">0 reviews</span></b></div>
-        <div class="pd-price">₹${Number(p.price).toLocaleString('en-IN')}${p.old_price?`<s>₹${p.old_price}</s>`:''}</div>
+        <div class="pd-price">₹${Number(p.price).toLocaleString('en-IN')}${p.old_price?`<s>₹${Number(p.old_price).toLocaleString('en-IN')}</s>`:''}</div>
         <p class="pd-desc">${p.description || 'A timeless piece from the Treassories collection, crafted for those who appreciate quiet luxury.'}</p>
         <div class="pd-qty">
           <button onclick="pdChangeQty(-1)">−</button><b id="pdQtyLabel">1</b><button onclick="pdChangeQty(1)">+</button>
         </div>
-        <button class="btn-lux btn-fill w100" onclick="pdAddToCart()">Add to Bag</button>
+        <button class="btn-lux btn-fill w100" onclick="pdAddToCart(this)">Add to Bag</button>
       </div>
     </div>
     <section class="reviews-section">
@@ -91,8 +96,8 @@ function pdChangeQty(d){
   pdQty = Math.max(1, pdQty + d);
   document.getElementById('pdQtyLabel').textContent = pdQty;
 }
-function pdAddToCart(){
-  for(let i=0;i<pdQty;i++) addToCart(pdProduct.id);
+function pdAddToCart(btn){
+  for(let i=0;i<pdQty;i++) addToCart(pdProduct.id, i===0?btn:null);
 }
 
 let selectedRating = 0;

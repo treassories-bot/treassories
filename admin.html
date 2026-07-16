@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="description" content="Store management">
+<meta property="og:title" content="Admin — TREASSORIES">
+<meta property="og:description" content="Store management">
+<meta property="og:type" content="website">
 <title>Admin — TREASSORIES</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,800;1,500&family=Outfit:wght@200;300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
@@ -48,6 +53,7 @@
 
 <script>
 const API_BASE = '/api';
+let adminProducts = [];
 let toastT;
 function toast(msg){const t=document.getElementById('toast');t.innerHTML=msg;t.classList.add('show');
 clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2800);}
@@ -56,22 +62,27 @@ async function loadAdminProducts(){
   try{
     const res = await fetch(`${API_BASE}/products?limit=100`);
     const data = await res.json();
-    const list = data.products || [];
+    adminProducts = data.products || [];
     const box = document.getElementById('adminProductList');
-    box.innerHTML = list.length ? list.map(p=>`
+    box.innerHTML = adminProducts.length ? adminProducts.map(p=>`
       <div class="admin-row">
-        ${p.image_url?`<img src="${p.image_url}">`:`<span class="ar-emoji">${p.emoji||'✦'}</span>`}
+        ${p.image_url?`<img src="${p.image_url}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ar-emoji',textContent:${JSON.stringify(p.emoji||'✦')}}))">`:`<span class="ar-emoji">${p.emoji||'✦'}</span>`}
         <span class="ar-name">${p.name} <span style="color:var(--muted);font-size:.75rem">(${p.category})</span></span>
         <span class="ar-price">₹${Number(p.price).toLocaleString('en-IN')}</span>
-        <button onclick='editProduct(${JSON.stringify(p).replace(/'/g,"&apos;")})'>Edit</button>
+        <button data-id="${p.id}" class="edit-btn" aria-label="Edit ${p.name}">Edit</button>
       </div>`).join('') : '<div class="no-reviews">No products yet. Add your first one above.</div>';
+    box.querySelectorAll('.edit-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>editProduct(Number(btn.dataset.id)));
+    });
   }catch(err){
     console.error(err);
     document.getElementById('adminProductList').innerHTML = '<div class="no-reviews">Could not load products.</div>';
   }
 }
 
-function editProduct(p){
+function editProduct(id){
+  const p = adminProducts.find(x=>x.id===id);
+  if(!p) return;
   document.getElementById('formTitle').textContent = 'Editing: ' + p.name;
   document.getElementById('editId').value = p.id;
   document.getElementById('pName').value = p.name;

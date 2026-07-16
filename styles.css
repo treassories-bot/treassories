@@ -371,7 +371,7 @@ cursor:pointer;transition:.3s;font-size:1.1rem}
 .admin-card{border:1px solid rgba(201,169,98,.18);background:rgba(20,18,25,.5);padding:2rem}
 .admin-list{max-width:900px;margin:3rem auto 0;position:relative;z-index:3;padding:0 5% 6rem}
 .admin-row{display:flex;align-items:center;gap:1rem;border:1px solid rgba(201,169,98,.12);padding:1rem;margin-bottom:.7rem;
-background:rgba(20,18,25,.35)}
+background:rgba(20,18,25,.35);flex-wrap:wrap}
 .admin-row img,.admin-row .ar-emoji{width:46px;height:46px;object-fit:cover;flex-shrink:0;font-size:1.8rem;
 display:grid;place-items:center;background:var(--bg3)}
 .admin-row .ar-name{flex:1;font-family:var(--serif)}
@@ -380,5 +380,53 @@ display:grid;place-items:center;background:var(--bg3)}
 cursor:pointer;font-size:.7rem;letter-spacing:.15em;transition:.3s}
 .admin-row button:hover{background:var(--gold);color:#000}
 .nav-links a.nav-active{color:var(--champ)}
+
+/* ═══════════ HAMBURGER SIDEBAR (mobile nav) ═══════════ */
+.hamburger-btn{display:none}
+.side-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:399;opacity:0;pointer-events:none;transition:.4s}
+.side-overlay.show{opacity:1;pointer-events:auto}
+.side-drawer{position:fixed;top:0;left:-320px;width:min(300px,84vw);height:100%;background:var(--bg2);
+border-right:1px solid rgba(201,169,98,.2);z-index:400;transition:.45s cubic-bezier(.19,1,.22,1);
+display:flex;flex-direction:column;padding:1.6rem;overflow-y:auto}
+.side-drawer.open{left:0}
+.side-drawer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.6rem}
+.side-drawer-head .logo{font-size:1rem;letter-spacing:.25em}
+.side-search{position:relative;margin-bottom:1.8rem}
+.side-links{display:flex;flex-direction:column;gap:0}
+.side-links a{color:var(--ivory);text-decoration:none;font-size:.9rem;letter-spacing:.15em;text-transform:uppercase;
+padding:1rem 0;border-bottom:1px solid rgba(201,169,98,.1);transition:.3s}
+.side-links a:hover,.side-links a.nav-active{color:var(--champ);padding-left:.4rem}
+.side-foot{margin-top:auto;display:flex;flex-direction:column;gap:.8rem;padding-top:1.5rem}
+@media(max-width:768px){
+  .nav-links{display:none}
+  .hamburger-btn{display:grid}
+  section{padding:5rem 5%}
+}
+
+/* ═══════════ FOOTER LEGAL LINKS ═══════════ */
+.footer-links{display:flex;justify-content:center;gap:1.8rem;flex-wrap:wrap;margin:1.2rem 0;
+font-size:.7rem;letter-spacing:.12em;text-transform:uppercase}
+.footer-links a{color:var(--muted);text-decoration:none;transition:.3s}
+.footer-links a:hover{color:var(--champ)}
+
+/* ═══════════ LEGAL / CONTACT PAGES ═══════════ */
+.legal-wrap{max-width:760px;margin:0 auto;padding:9rem 5% 6rem;position:relative;z-index:3}
+.legal-wrap h2{font-size:1.3rem;margin:2rem 0 .8rem;color:var(--champ)}
+.legal-wrap h2:first-child{margin-top:0}
+.legal-wrap p,.legal-wrap li{color:var(--muted);font-weight:300;line-height:1.85;font-size:.92rem}
+.legal-wrap ul{padding-left:1.3rem;margin-bottom:1rem}
+.legal-wrap .updated{color:#544f45;font-size:.75rem;letter-spacing:.1em;margin-bottom:2.5rem;display:block}
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:2rem}
+@media(max-width:600px){.contact-grid{grid-template-columns:1fr}}
+.contact-card{border:1px solid rgba(201,169,98,.15);background:rgba(20,18,25,.4);padding:1.4rem;text-align:center}
+.contact-card .ci{font-size:1.6rem;margin-bottom:.6rem}
+.contact-card b{display:block;color:var(--ivory);margin-bottom:.3rem;font-size:.85rem}
+.contact-card span{color:var(--muted);font-size:.82rem}
+
+/* ═══════════ ACCESSIBILITY ═══════════ */
+a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{
+  outline:2px solid var(--gold);outline-offset:2px}
+img{max-width:100%}
+.pcard img,.pd-visual img,.cart-item img,.sr-item img,.admin-row img{background:var(--bg3)}
 .pcard a{display:block}
 .pd-visual .pd-emoji{font-size:9rem}
