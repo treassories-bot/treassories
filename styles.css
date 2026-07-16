@@ -407,7 +407,13 @@ padding:1rem 0;border-bottom:1px solid rgba(201,169,98,.1);transition:.3s}
   .hamburger-btn{display:grid}
   section{padding:5rem 5%}
 }
+.side-drawer:not(.open) .side-links{
+  display:none;
+}
 
+.side-drawer.open .side-links{
+  display:flex;
+}
 /* ═══════════ FOOTER LEGAL LINKS ═══════════ */
 .footer-links{display:flex;justify-content:center;gap:1.8rem;flex-wrap:wrap;margin:1.2rem 0;
 font-size:.7rem;letter-spacing:.12em;text-transform:uppercase}
