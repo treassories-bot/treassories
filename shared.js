@@ -200,12 +200,20 @@ function injectChrome(){
   });
 }
 function toggleSidebar(){
-  const opening = !document.getElementById('sideDrawer').classList.contains('open');
-  document.getElementById('sideDrawer').classList.toggle('open', opening);
-  document.getElementById('sideOverlay').classList.toggle('show', opening);
-  if(opening) document.getElementById('cartDrawer').classList.remove('open');
-}
+  const drawer = document.getElementById('sideDrawer');
+  const overlay = document.getElementById('sideOverlay');
 
+  if(!drawer || !overlay) return;
+
+  if(drawer.classList.contains('open')){
+    drawer.classList.remove('open');
+    overlay.classList.remove('show');
+  }else{
+    drawer.classList.add('open');
+    overlay.classList.add('show');
+    document.getElementById('cartDrawer')?.classList.remove('open');
+  }
+}
 /* ═══════════ PRODUCT CARD (reused by home/men/women grids) ═══════════ */
 function productCardHTML(p, i){
   window.__productCache[p.id]=p;
@@ -484,6 +492,12 @@ function initRevealObserver(){
 /* ═══════════ INIT ═══════════ */
 document.addEventListener('DOMContentLoaded', ()=>{
   injectChrome();
+   function toggleSidebar(){
+  const opening = !document.getElementById('sideDrawer').classList.contains('open');
+  document.getElementById('sideDrawer').classList.toggle('open', opening);
+  document.getElementById('sideOverlay').classList.toggle('show', opening);
+  if(opening) document.getElementById('cartDrawer').classList.remove('open');
+}
   updateCart();
   if(user) document.getElementById('userBtn').textContent='✦';
   initSearch();
