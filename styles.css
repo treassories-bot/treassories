@@ -392,7 +392,12 @@ display:flex;flex-direction:column;padding:1.6rem;overflow-y:auto}
 .side-drawer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.6rem}
 .side-drawer-head .logo{font-size:1rem;letter-spacing:.25em}
 .side-search{position:relative;margin-bottom:1.8rem}
-.side-links{display:flex;flex-direction:column;gap:0}
+.side-links{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  width:100%;
+}
 .side-links a{color:var(--ivory);text-decoration:none;font-size:.9rem;letter-spacing:.15em;text-transform:uppercase;
 padding:1rem 0;border-bottom:1px solid rgba(201,169,98,.1);transition:.3s}
 .side-links a:hover,.side-links a.nav-active{color:var(--champ);padding-left:.4rem}
