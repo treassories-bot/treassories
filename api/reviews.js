@@ -34,13 +34,20 @@ module.exports = async (req, res) => {
       if (!product_id || !name || !rating) {
         return res.status(400).json({ error: 'Missing fields' });
       }
-      if (rating < 1 || rating > 5) {
+      const numRating = Number(rating);
+      if (!Number.isInteger(numRating) || numRating < 1 || numRating > 5) {
         return res.status(400).json({ error: 'Rating must be between 1 and 5' });
+      }
+      if (String(name).length > 80) {
+        return res.status(400).json({ error: 'Name is too long' });
+      }
+      if (String(comment || '').length > 1000) {
+        return res.status(400).json({ error: 'Review is too long (max 1000 characters)' });
       }
 
       const { data, error } = await supabase
         .from('reviews')
-        .insert({ product_id, name, rating, comment: comment || '' })
+        .insert({ product_id, name: String(name).trim(), rating: numRating, comment: String(comment || '').trim() })
         .select()
         .single();
 
