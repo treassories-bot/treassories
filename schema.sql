@@ -34,6 +34,26 @@ create policy "Public can view products" on products for select using (true);
 alter table reviews enable row level security;
 create policy "Public can view reviews" on reviews for select using (true);
 
+-- ═══════════ ORDERS TABLE ═══════════
+-- create-order.js, cod-order.js aur verify-payment.js teeno is table ko use karte hain,
+-- par ye pehle schema me define hi nahi thi — agar Supabase me already nahi hai to ye
+-- block zaroor run karo, warna orders save hi nahi ho rahe honge.
+create table orders (
+  id bigint generated always as identity primary key,
+  order_id text unique not null,
+  amount numeric not null,
+  cart jsonb not null,
+  address jsonb not null,
+  payment_method text not null check (payment_method in ('online','cod')),
+  status text not null default 'created',
+  payment_id text,
+  created_at timestamptz default now()
+);
+
+-- RLS on, koi public policy nahi — sirf backend (service key) hi orders padh/likh sakta hai,
+-- kyunki abhi koi "my orders" page nahi hai aur isme address/phone jaisa sensitive data hai.
+alter table orders enable row level security;
+
 -- ═══════════ SEED — your existing 12 products, moved into the database ═══════════
 insert into products (slug, name, category, price, old_price, emoji, tag, rating, description) values
 ('sovereign-chrono','Sovereign Chrono','men',2499,4999,'⌚','Signature',4.8,'A precision timepiece crafted for the modern gentleman. Stainless steel case, sapphire crystal glass, and a movement built to last generations.'),
