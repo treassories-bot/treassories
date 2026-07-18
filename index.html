@@ -11,8 +11,6 @@
 <title>TREASSORIES — Luxury Accessories</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,800;1,500&family=Outfit:wght@200;300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body>
 
@@ -94,6 +92,8 @@
 </section>
 
 <script src="shared.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 function onSharedReady(){
   loadProductsIntoGrid('productGrid', 'all', 6);
@@ -114,7 +114,11 @@ setTimeout(()=>document.getElementById('intro').style.display='none',6100);
 const mItems=['FREE SHIPPING','CASH ON DELIVERY','PREMIUM QUALITY','EASY RETURNS','NEW ARRIVALS','TREASSORIES'];
 document.getElementById('marqTrack').innerHTML=[...mItems,...mItems].map(m=>`<span>${m}<i>✦</i></span>`).join('');
 
-/* ═══════════ THREE.JS — HEAVY 3D BG ═══════════ */
+/* ═══════════ THREE.JS — HEAVY 3D BG ═══════════
+   requestAnimationFrame se thoda defer kiya hai taaki browser ko is bhaari
+   setup se pehle ek baar page paint karne ka mauka mil jaaye (nav/sidebar
+   turant dikhein, background 1 frame baad aaye — user ko farq nahi padta) */
+requestAnimationFrame(()=>{
 const isMobile=matchMedia('(hover:none)').matches;
 const canvas=document.getElementById('bg3d');
 const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:!isMobile});
@@ -227,6 +231,7 @@ addEventListener('scroll',()=>{scrollR=scrollY*.0005;});
   renderer.render(scene,camera);
 })(0);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+}); /* end requestAnimationFrame defer */
 
 
 </script>

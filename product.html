@@ -11,7 +11,7 @@
 <title>TREASSORIES</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,800;1,500&family=Outfit:wght@200;300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
 </head>
 <body class="light-bg">
 
@@ -53,21 +53,22 @@ function showNotFound(){
 function renderProduct(){
   const p = pdProduct;
   document.title = p.name + ' — TREASSORIES';
+  const safeName = escapeHTML(p.name);
   const visual = p.image_url
-    ? `<img src="${p.image_url}" alt="${p.name}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'pd-emoji',textContent:${JSON.stringify(p.emoji||'✦')}}))">`
+    ? `<img src="${escapeHTML(p.image_url)}" alt="${safeName}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'pd-emoji',textContent:${JSON.stringify(p.emoji||'✦')}}))">`
     : `<span class="pd-emoji">${p.emoji||'✦'}</span>`;
   document.getElementById('pdRoot').innerHTML = `
     <div class="breadcrumb" style="padding:7rem 5% 0;text-align:left;max-width:1100px;margin:0 auto">
-      <a href="index.html">Home</a> / <a href="${p.category}.html">${p.category==='men'?'Men':'Women'}</a> / ${p.name}
+      <a href="index.html">Home</a> / <a href="${p.category}.html">${p.category==='men'?'Men':'Women'}</a> / ${safeName}
     </div>
     <div class="pd-wrap">
-      <div class="pd-visual">${p.tag?`<span class="pd-tag">${p.tag}</span>`:''}${visual}</div>
+      <div class="pd-visual">${p.tag?`<span class="pd-tag">${escapeHTML(p.tag)}</span>`:''}${visual}</div>
       <div class="pd-info">
         <span class="pcat">${p.category==='men'?'Homme':'Femme'} · Accessory</span>
-        <h1>${p.name}</h1>
+        <h1>${safeName}</h1>
         <div class="pd-stars">★★★★★<b>${p.rating||4.5} · <span id="reviewCountLabel">0 reviews</span></b></div>
         <div class="pd-price">₹${Number(p.price).toLocaleString('en-IN')}${p.old_price?`<s>₹${Number(p.old_price).toLocaleString('en-IN')}</s>`:''}</div>
-        <p class="pd-desc">${p.description || 'A timeless piece from the Treassories collection, crafted for those who appreciate quiet luxury.'}</p>
+        <p class="pd-desc">${escapeHTML(p.description) || 'A timeless piece from the Treassories collection, crafted for those who appreciate quiet luxury.'}</p>
         <div class="pd-qty">
           <button onclick="pdChangeQty(-1)">−</button><b id="pdQtyLabel">1</b><button onclick="pdChangeQty(1)">+</button>
         </div>
@@ -80,7 +81,7 @@ function renderProduct(){
         <div class="field"><label>YOUR NAME</label><input id="rvName" placeholder="Your name"></div>
         <div class="field"><label>RATING</label>
           <div class="star-pick" id="starPick">
-            <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+            <span data-v="1" role="button" tabindex="0" aria-label="Rate 1 star">★</span><span data-v="2" role="button" tabindex="0" aria-label="Rate 2 stars">★</span><span data-v="3" role="button" tabindex="0" aria-label="Rate 3 stars">★</span><span data-v="4" role="button" tabindex="0" aria-label="Rate 4 stars">★</span><span data-v="5" role="button" tabindex="0" aria-label="Rate 5 stars">★</span>
           </div>
         </div>
         <div class="field"><label>YOUR REVIEW</label><textarea id="rvComment" rows="3" placeholder="What did you think of this piece?"></textarea></div>
@@ -103,10 +104,17 @@ function pdAddToCart(btn){
 let selectedRating = 0;
 function initStarPicker(){
   const stars = document.querySelectorAll('#starPick span');
+  const pick = v=>{
+    selectedRating = v;
+    stars.forEach(x=>x.classList.toggle('on', Number(x.dataset.v) <= selectedRating));
+  };
   stars.forEach(s=>{
-    s.addEventListener('click', ()=>{
-      selectedRating = Number(s.dataset.v);
-      stars.forEach(x=>x.classList.toggle('on', Number(x.dataset.v) <= selectedRating));
+    s.addEventListener('click', ()=>pick(Number(s.dataset.v)));
+    s.addEventListener('keydown', e=>{
+      if(e.key === 'Enter' || e.key === ' '){
+        e.preventDefault();
+        pick(Number(s.dataset.v));
+      }
     });
   });
 }
@@ -121,8 +129,8 @@ async function loadReviews(){
     const box = document.getElementById('reviewsList');
     box.innerHTML = list.length ? list.map(r=>`
       <div class="review-card">
-        <div class="rv-top"><span class="rv-name">${r.name}</span><span class="rv-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span></div>
-        <div class="rv-comment">${r.comment || ''}</div>
+        <div class="rv-top"><span class="rv-name">${escapeHTML(r.name)}</span><span class="rv-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span></div>
+        <div class="rv-comment">${escapeHTML(r.comment)}</div>
         <div class="rv-date">${new Date(r.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>
       </div>`).join('') : '<div class="no-reviews">No reviews yet — be the first to share your thoughts.</div>';
   }catch(err){

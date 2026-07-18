@@ -18,6 +18,13 @@ function saveCart(){ localStorage.setItem(CART_KEY, JSON.stringify(cart)); }
 function saveUser(){ localStorage.setItem(USER_KEY, JSON.stringify(user)); }
 function cacheProducts(list){ (list||[]).forEach(p=>window.__productCache[p.id]=p); }
 
+// Anything that came from a database row (product name/tag, and especially review
+// name/comment — reviews.js accepts those from anyone, no login needed) must go
+// through this before it's dropped into innerHTML, or it's a stored-XSS hole.
+function escapeHTML(str){
+  return String(str==null?'':str).replace(/[&<>"']/g, ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
 /* ═══════════ INJECT HEADER / CART / MODALS / FOOTER ═══════════ */
 function currentPage(){ return (location.pathname.split('/').pop()||'index.html').replace('.html',''); }
 
@@ -217,18 +224,19 @@ function toggleSidebar(){
 /* ═══════════ PRODUCT CARD (reused by home/men/women grids) ═══════════ */
 function productCardHTML(p, i){
   window.__productCache[p.id]=p;
+  const safeName = escapeHTML(p.name);
   const visual = p.image_url
-    ? `<img src="${p.image_url}" alt="${p.name}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'obj',textContent:${JSON.stringify(p.emoji||'✦')}}))" style="width:100%;height:100%;object-fit:cover">`
+    ? `<img src="${escapeHTML(p.image_url)}" alt="${safeName}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'obj',textContent:${JSON.stringify(p.emoji||'✦')}}))" style="width:100%;height:100%;object-fit:cover">`
     : `<span class="obj">${p.emoji||'✦'}</span>`;
   return `<div class="pcard">
     <a href="product.html?slug=${p.slug}" style="text-decoration:none;color:inherit">
       <div class="pvis"><div class="inner-frame"></div>
-        ${p.tag?`<span class="tag">${p.tag}</span>`:''}
+        ${p.tag?`<span class="tag">${escapeHTML(p.tag)}</span>`:''}
         ${visual}<div class="glow-floor"></div></div>
       <div class="pbody"><span class="pcat">${p.category==='men'?'Homme':'Femme'} · Accessory</span>
-      <h3>${p.name}</h3><div class="stars">★★★★★<b>${p.rating||4.5}</b></div></a>
+      <h3>${safeName}</h3><div class="stars">★★★★★<b>${p.rating||4.5}</b></div></a>
       <div class="price-row"><span class="price">₹${Number(p.price).toLocaleString('en-IN')}${p.old_price?`<s>₹${Number(p.old_price).toLocaleString('en-IN')}</s>`:''}</span>
-      <button class="bag-btn" onclick="addToCart(${p.id},this)" aria-label="Add ${p.name} to bag">Add to Bag</button></div></div>
+      <button class="bag-btn" onclick="addToCart(${p.id},this)" aria-label="Add ${safeName} to bag">Add to Bag</button></div></div>
     </div>`;
 }
 
@@ -283,8 +291,8 @@ function renderSearchResults(list, resultsId){
   cacheProducts(list);
   results.innerHTML = list.length ? list.map(p=>`
     <a class="sr-item" href="product.html?slug=${p.slug}">
-      ${p.image_url?`<img src="${p.image_url}" loading="lazy">`:`<span class="sr-emoji">${p.emoji||'✦'}</span>`}
-      <span class="sr-name">${p.name}</span>
+      ${p.image_url?`<img src="${escapeHTML(p.image_url)}" loading="lazy">`:`<span class="sr-emoji">${p.emoji||'✦'}</span>`}
+      <span class="sr-name">${escapeHTML(p.name)}</span>
       <span class="sr-price">₹${Number(p.price).toLocaleString('en-IN')}</span>
     </a>`).join('') : '<div class="sr-empty">No products found</div>';
   results.classList.add('show');
@@ -308,7 +316,7 @@ function addToCart(id, btn){
     setTimeout(()=>fly.remove(),900);
   }
   updateCart();
-  toast(`<span class="gold">${p.name}</span> added to your bag ✦`);
+  toast(`<span class="gold">${escapeHTML(p.name)}</span> added to your bag ✦`);
 }
 function updateCart(){
   const cc=document.getElementById('cartCount'),n=cart.reduce((s,i)=>s+i.qty,0);
@@ -317,8 +325,8 @@ function updateCart(){
   if(scc) scc.textContent=n;
   const box=document.getElementById('cartItems');
   box.innerHTML=cart.length?cart.map(i=>`<div class="cart-item">
-    ${i.image_url?`<img src="${i.image_url}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ci-emoji',textContent:${JSON.stringify(i.emoji||'✦')}}))" style="width:2.2rem;height:2.2rem;object-fit:cover">`:`<span class="ci-emoji">${i.emoji||'✦'}</span>`}
-    <div class="ci-info"><h4>${i.name}</h4><div class="p">₹${(i.price*i.qty).toLocaleString('en-IN')}</div></div>
+    ${i.image_url?`<img src="${escapeHTML(i.image_url)}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ci-emoji',textContent:${JSON.stringify(i.emoji||'✦')}}))" style="width:2.2rem;height:2.2rem;object-fit:cover">`:`<span class="ci-emoji">${i.emoji||'✦'}</span>`}
+    <div class="ci-info"><h4>${escapeHTML(i.name)}</h4><div class="p">₹${(i.price*i.qty).toLocaleString('en-IN')}</div></div>
     <div class="qty"><button onclick="chQty(${i.id},-1)" aria-label="Decrease quantity">−</button><b>${i.qty}</b><button onclick="chQty(${i.id},1)" aria-label="Increase quantity">+</button></div></div>`).join('')
     :'<div class="empty-cart"><div>◇</div>Your bag is empty.<br>Discover something timeless.</div>';
   document.getElementById('cartTotal').textContent='₹'+cart.reduce((s,i)=>s+i.price*i.qty,0).toLocaleString('en-IN');
@@ -343,7 +351,7 @@ function showLoginView(v){['loginMain','phoneView','emailView'].forEach(x=>docum
   document.getElementById('phoneStep2').classList.add('hidden');}
 function loginSuccess(name){user={name};saveUser();closeOverlay('loginOverlay');
   document.getElementById('userBtn').textContent='✦';
-  toast(`Welcome, <span class="gold">${name}</span> — login successful`);
+  toast(`Welcome, <span class="gold">${escapeHTML(name)}</span> — login successful`);
   if(pendingCheckout){pendingCheckout=false;startCheckout();}}
 function socialLogin(p){toast(`Connecting to ${p}...`);setTimeout(()=>loginSuccess(p+' User'),1200);}
 function sendOTP(){const ph=document.getElementById('phoneInput').value;
@@ -383,10 +391,11 @@ function goToPayment(){
   for(const id of['adName','adPhone','adEmail','adAddr','adCity','adPin','adState'])
     if(!document.getElementById(id).value)return toast('Please fill in all delivery details');
   if(document.getElementById('adPhone').value.length!==10)return toast('Phone number must be 10 digits');
+  if(!/^\d{6}$/.test(document.getElementById('adPin').value))return toast('Pincode must be 6 digits');
   if(!document.getElementById('adEmail').value.includes('@'))return toast('Please enter a valid email address');
   const sub=cart.reduce((s,i)=>s+i.price*i.qty,0);
   document.getElementById('orderSummary').innerHTML=
-    cart.map(i=>`<div class="row"><span>${i.name} × ${i.qty}</span><span>₹${i.price*i.qty}</span></div>`).join('')+
+    cart.map(i=>`<div class="row"><span>${escapeHTML(i.name)} × ${i.qty}</span><span>₹${i.price*i.qty}</span></div>`).join('')+
     `<div class="row"><span>Delivery</span><span class="free">COMPLIMENTARY</span></div>
      <div class="row total"><span>Total Payable</span><span>₹${sub.toLocaleString('en-IN')}</span></div>`;
   ckShow(2);}
@@ -459,15 +468,18 @@ async function payOnline(total,address){
 }
 function completeOrder(oid,payLabel){
   const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
+  const itemCount=cart.reduce((s,i)=>s+i.qty,0);
+  const deliverTo=`${document.getElementById('adName').value}, ${document.getElementById('adCity').value}`;
   document.getElementById('orderId').textContent=oid;
   document.getElementById('successSummary').innerHTML=
-    `<div class="row"><span>Items</span><span>${cart.reduce((s,i)=>s+i.qty,0)}</span></div>
+    `<div class="row"><span>Items</span><span>${itemCount}</span></div>
      <div class="row"><span>Payment</span><span>${payLabel}</span></div>
-     <div class="row"><span>Deliver to</span><span>${document.getElementById('adName').value}, ${document.getElementById('adCity').value}</span></div>
+     <div class="row"><span>Deliver to</span><span>${deliverTo}</span></div>
      <div class="row total"><span>Total</span><span>₹${total.toLocaleString('en-IN')}</span></div>`;
-  ckShow(3);confetti();
+  cart=[];updateCart(); // order is confirmed now, so the bag clears immediately —
+  ckShow(3);confetti(); // not only when "Continue Shopping" is clicked later
 }
-function finishOrder(){cart=[];updateCart();closeOverlay('checkoutOverlay');toast('Thank you! Your order is confirmed ✦');}
+function finishOrder(){closeOverlay('checkoutOverlay');toast('Thank you! Your order is confirmed ✦');}
 function confetti(){for(let i=0;i<36;i++){
   const c=document.createElement('div');
   c.style.cssText=`position:fixed;z-index:999;width:8px;height:8px;pointer-events:none;
@@ -489,17 +501,15 @@ function initRevealObserver(){
   document.querySelectorAll('.rv').forEach(el=>io.observe(el));
 }
 
-/* ═══════════ INIT ═══════════ */
+/* ═══════════ INIT ═══════════
+   Header/sidebar/cart/footer inject HONE HI CHAHIYE turant — DOMContentLoaded
+   ka wait karne se agar page pe koi bhaari script (jaise Three.js) ho to
+   nav/sidebar dikhne me der lagti hai. Isliye ye turant (is line pe hi) chalta hai. */
+injectChrome();
+updateCart();
+if(user) document.getElementById('userBtn').textContent='✦';
+
 document.addEventListener('DOMContentLoaded', ()=>{
-  injectChrome();
-   function toggleSidebar(){
-  const opening = !document.getElementById('sideDrawer').classList.contains('open');
-  document.getElementById('sideDrawer').classList.toggle('open', opening);
-  document.getElementById('sideOverlay').classList.toggle('show', opening);
-  if(opening) document.getElementById('cartDrawer').classList.remove('open');
-}
-  updateCart();
-  if(user) document.getElementById('userBtn').textContent='✦';
   initSearch();
   initRevealObserver();
   if(typeof onSharedReady==='function') onSharedReady();
